@@ -7,13 +7,28 @@ library
   hs-source-dirs: src
   build-depends: base
                , common
+               , data-default
+               , ghcjs-dom
+               , echarts-jsdom
                , obelisk-frontend
                , obelisk-route
                , jsaddle
-               , reflex-dom-core
+               , jsaddle-dom
+               , reflex-dom
                , obelisk-executable-config-lookup
                , obelisk-generated-static
+               , obelisk-oauth-common
+               , reflex
+               , reflex-dom
+               , reflex-dom-echarts
+               , scientific
+               , servant
+--               , servant-reflex
                , text
+               , transformers
+               , unordered-containers
+               , vector
+
   exposed-modules:
     Frontend
   ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wincomplete-record-updates -O -fno-show-valid-hole-fits

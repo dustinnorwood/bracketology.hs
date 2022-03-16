@@ -1,47 +1,66 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DataKinds, FlexibleContexts, FlexibleInstances, GADTs, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase, MultiParamTypeClasses, OverloadedStrings, PatternSynonyms, RankNTypes #-}
+{-# LANGUAGE RecursiveDo, ScopedTypeVariables, TypeApplications                                #-}
 
 module Frontend where
 
-import Control.Monad
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as T
-import Language.Javascript.JSaddle (eval, liftJSM)
+import Reflex.Dom.Core hiding (Namespace)
 
-import Obelisk.Frontend
-import Obelisk.Configs
-import Obelisk.Route
-import Obelisk.Generated.Static
+import Data.List.NonEmpty         (NonEmpty)
+import Obelisk.Frontend           (Frontend (Frontend), ObeliskWidget)
+import Obelisk.Route.Frontend     (R, RouteToUrl, RoutedT, SetRoute, subRoute_)
 
-import Reflex.Dom.Core
-
-import Common.Api
 import Common.Route
 
+import           Common.Route                    (FrontendRoute (..))
+import           Frontend.Head                   (htmlHead)
+import           Frontend.HomePage               (homePage)
+--import           Frontend.Login                  (login)
+import           Frontend.Nav                    (nav)
+import           Frontend.Player                 (playerPage)
+import           Frontend.Team                   (teamPage)
+--import           Frontend.Profile                (profile)
+--import           Frontend.Register               (register)
+import           Frontend.Search                 (searchPage)
+--import           Frontend.Settings               (settings)
+import           Frontend.Utils                  (routeLinkClass)
 
--- This runs in a monad that can be run on the client or the server.
--- To run code in a pure client or pure server context, use one of the
--- `prerender` functions.
+htmlBody
+  :: forall t m
+  . ( ObeliskWidget t (R FrontendRoute) m
+    )
+  => RoutedT t (R FrontendRoute) m ()
+htmlBody = do
+  elClass "div" "grid-container" $ do
+    elClass "div" "grid-item-nav" nav
+    elClass "div" "grid-item-main" $ subRoute_ pages
+    -- elClass "div" "grid-item-footer" footer
+  where
+    pages 
+      :: FrontendRoute a
+      -> RoutedT t a m ()
+    pages r = case r of
+      FrontendRoute_Home     -> homePage
+      FrontendRoute_Search   -> searchPage
+      --FrontendRoute_Login    -> login
+      --FrontendRoute_Register -> register
+      FrontendRoute_Team  -> teamPage
+      FrontendRoute_Player  -> playerPage
+      --FrontendRoute_Settings -> settings
+      --FrontendRoute_Profile  -> pathSegmentSubRoute profile
+
+footer
+  :: ( DomBuilder t m
+     , PostBuild t m
+     , RouteToUrl (R (FrontendRoute)) m
+     , SetRoute t (R (FrontendRoute)) m
+     , MonadSample t m
+     )
+  => m ()
+footer = elClass "footer" "footer" $ elClass "div" "container" $ do
+  elClass "div" "brand" $ routeLinkClass "logo-font" homeRoute $ text "Bracketology"
+  elClass "span" "attribution" $ do
+    text "The trillion dollar business opportunity."
+
 frontend :: Frontend (R FrontendRoute)
-frontend = Frontend
-  { _frontend_head = do
-      el "title" $ text "Obelisk Minimal Example"
-      elAttr "link" ("href" =: $(static "main.css") <> "type" =: "text/css" <> "rel" =: "stylesheet") blank
-  , _frontend_body = do
-      el "h1" $ text "Welcome to Obelisk!"
-      el "p" $ text $ T.pack commonStuff
-      
-      -- `prerender` and `prerender_` let you choose a widget to run on the server
-      -- during prerendering and a different widget to run on the client with
-      -- JavaScript. The following will generate a `blank` widget on the server and
-      -- print "Hello, World!" on the client.
-      prerender_ blank $ liftJSM $ void $ eval ("console.log('Hello, World!')" :: T.Text)
-
-      elAttr "img" ("src" =: $(static "obelisk.jpg")) blank
-      el "div" $ do
-        exampleConfig <- getConfig "common/example"
-        case exampleConfig of
-          Nothing -> text "No config file found in config/common/example"
-          Just s -> text $ T.decodeUtf8 s
-      return ()
-  }
+frontend = Frontend (prerender_ htmlHead htmlHead) htmlBody

@@ -6,8 +6,17 @@ build-type: Simple
 library
   hs-source-dirs: src
   build-depends: base
-               , obelisk-route
+               , aeson
+               , casing
+               , categories
+               , dependent-sum
                , mtl
+               , obelisk-oauth-common
+               , obelisk-route
+               , ordered-containers
+               , parsec
+               , random
+               , servant
                , text
   exposed-modules:
     Common.Api

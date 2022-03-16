@@ -8,10 +8,38 @@ library
   if impl(ghcjs)
     buildable: False
   build-depends: base
+               , aeson
+               , beam-core
+               , beam-postgres
+               , bytestring
                , common
+               , conduit
+               , containers
                , frontend
+               , jose
+               , html-parse
+               , http-client
+               , http-client-tls
+               , lens
+               , monad-alter
+               , monad-control
+               , mtl
                , obelisk-backend
+               , obelisk-oauth-backend
+               , obelisk-oauth-common
                , obelisk-route
+               , postgresql-simple
+               , req
+               , resource-pool
+               , safe-exceptions
+               , scrypt
+               , servant-auth
+--               , servant-auth-server
+               , servant-snap
+               , snap
+               , snap-core
+               , time
+               , validation
   exposed-modules:
     Backend
   ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wincomplete-record-updates -O -fno-show-valid-hole-fits
