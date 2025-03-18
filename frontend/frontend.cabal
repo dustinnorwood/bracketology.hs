@@ -17,7 +17,6 @@ library
                , reflex-dom
                , obelisk-executable-config-lookup
                , obelisk-generated-static
-               , obelisk-oauth-common
                , reflex
                , reflex-dom
                , reflex-dom-echarts

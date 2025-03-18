@@ -32,11 +32,12 @@ import           Data.Dependent.Sum              (DSum ((:=>)))
 import           Data.Function                   (on)
 import           Data.Functor.Identity           (Identity (..))
 import           Data.IORef
-import           Data.List                       (sortBy)
+import           Data.List                       (intercalate, sortBy)
 import qualified Data.Map.Strict                 as M
 import qualified Data.Map.Ordered                as O
-import           Data.Maybe                      (fromMaybe)
+import           Data.Maybe                      (catMaybes, fromMaybe)
 import           Data.Monoid                     ((<>))
+import           Data.Ord                        (Down(..))
 import           Data.Pool
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
@@ -96,17 +97,20 @@ backend = Backend
       liftIO $ putStrLn "About to test the db connection. If ob run dies, check out config/backend/pgConnStr"
 --      env <- mkEnv pgConnStr
 --      conn <- openAppDb (T.encodeUtf8 pgConnStr)
---      eRes <- runReaderT (runExceptT downloadNewData) conn
+--      eRes <- downloadNewData -- runReaderT (runExceptT downloadNewData) conn
 --      liftIO $ putStrLn $ show eRes
-      cfg <- readBackendConfig
-      liftIO $ T.putStrLn $ "routeEnv: " <> _backendConfig_routeEnv cfg
-      ePkgs <- parseTeamObjectsFromFile "/home/dustin/haskell/bracketology.hs/static/Teams.txt"
+--      cfg <- readBackendConfig
+--      liftIO $ T.putStrLn $ "routeEnv: " <> _backendConfig_routeEnv cfg
+      -- ePkgs <- liftIO $ M.lookup "common/Teams.txt" <$> getConfigs
+      ePkgs <- parseTeamObjectsFromFile "config/common/Teams.txt"
       case ePkgs of
         Left e -> liftIO $ putStrLn $ "Error parsing TeamObjects: " ++ show e
         Right pkgs -> do
           let pkgs' = getTeamRawScores pkgs
               pkgs'' = foldr ($) pkgs' $ replicate 20 adjustTeamScores
-              teamScore = (^. team . team_score) <$> pkgs''
+              teamScores = sortBy (compare `on` (Down . snd)) $ fmap (^. team . team_score) <$> M.toList pkgs''
+              showTeamScore (n, (name, score)) = show n ++ ". " ++ T.unpack name ++ ": " ++ show ((fromIntegral (round (10000 * score)) / 100) :: Double) ++ "%"
+          liftIO $ putStrLn $ "Team scores\n-----------\n" ++ intercalate "\n" (showTeamScore <$> zip [1..] teamScores)
           pkgsRef <- newIORef pkgs''
           liftIO $ putStrLn $ "Finished ranking teams"
           serve $ \case
@@ -152,7 +156,7 @@ backend = Backend
                         Nothing -> do
                           liftIO . putStrLn . T.unpack $ "Got Nothing"
                           writeLBS "404"
-                        Just t1 -> do
+                        Just t1 -> do 
                           liftIO . putStrLn . T.unpack $ "Got Just"
                           mTeam2 <- select @TeamObject (TeamName team2)
                           case mTeam2 of
@@ -165,11 +169,12 @@ backend = Backend
                               liftIO . putStrLn . T.unpack $ "Got Just"
                               writeLBS $ encode (tsd1,tsd2)
                 ApiRoute_Bracket :/ () -> do
-                  tsds <- for bracket2018 $ \teamName -> select @TeamObject (TeamName teamName) >>= \case
+                  tsds <- for bracket2025 $ \teamName -> select @TeamObject (TeamName teamName) >>= \case
                     Nothing -> pure Nothing
                     Just t -> pure . Just $ createTeamSimulationDetails pkgs t
-                  case sequence tsds of
-                    Nothing -> writeLBS "404"
-                    Just teams -> writeLBS $ encode teams
+                  writeLBS $ encode $ catMaybes tsds
+                  -- case sequence tsds of
+                  --   Nothing -> writeLBS "404"
+                  --   Just teams -> writeLBS $ encode teams
             BackendRoute_Api :=> _ -> pure ()
   }

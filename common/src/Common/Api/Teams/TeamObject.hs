@@ -27,6 +27,7 @@ import           Data.Map.Strict                  (Map)
 import qualified Data.Map.Strict                  as M
 import           Data.Text                        (Text)
 import qualified Data.Text                        as T
+import           Data.Text.Encoding               (encodeUtf8)
 import           Prelude                          hiding (lookup)
 import           Text.Parsec
 
@@ -87,12 +88,12 @@ number = read <$> many digit
 boolean :: TOP Bool
 boolean = (string "True" $> True) <|> (string "False" $> False)
 
-parseTeamObjectsFromFile :: MonadIO m => String -> m (Either ParseError (Map Text TeamObject))
+parseTeamObjectsFromFile :: MonadIO m => String -> m (Either String (Map Text TeamObject))
 parseTeamObjectsFromFile fname = do
-  input <- liftIO $ T.pack <$> readFile fname
-  let eTos = runTeamObjectParser fname input
+  input <- liftIO $ readFile fname
+  let eTeamObsList = traverse (eitherDecodeStrict . encodeUtf8 . T.pack) $ lines input
   liftIO $ putStrLn $ "Finished parsing TeamObjects"
-  pure $ eTos
+  pure $ M.fromList . map (\o -> (o ^. team . team_name, o)) <$> eTeamObsList
 
 runTeamObjectParser :: SourceName -> Text -> Either ParseError (Map Text TeamObject)
 runTeamObjectParser = runParser parseTeamObjects ()

@@ -1,3 +1,198 @@
-p {
-  color: red;  
+/* General Navbar Styles */
+.nav-container {
+  background-color: #f8f9fa; /* Light background for clarity */
+  border-bottom: 2px solid #dee2e6;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem 1rem;
+}
+
+/* Branding */
+.navbar-brand {
+  font-weight: bold;
+  font-size: 1.5rem;
+  color: #007bff; /* Highlight brand with primary color */
+}
+
+.navbar-brand:hover {
+  color: #0056b3;
+  text-decoration: none;
+}
+
+/* Navigation Links */
+.navbar-nav .nav-item .nav-link {
+  color: #495057;
+  padding: 0.5rem 1rem;
+  transition: color 0.3s ease-in-out;
+}
+
+.navbar-nav .nav-item .nav-link:hover,
+.navbar-nav .nav-item .nav-link.active {
+  color: #007bff;
+  background-color: #e9ecef;
+  border-radius: 5px;
+}
+
+/* Toggler Button */
+.navbar-toggler {
+  border: none;
+  outline: none;
+  box-shadow: none;
+}
+
+.navbar-toggler-icon {
+  background-image: url("data:image/svg+xml;charset=UTF8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cpath stroke='rgba%280, 123, 255, 1%29' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+}
+
+/* Navbar Collapse Animation */
+#navbarCollapse {
+  transition: height 0.3s ease;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .nav-container {
+      padding: 0.5rem;
+  }
+
+  .navbar-nav {
+      text-align: center;
+  }
+
+  .navbar-nav .nav-item {
+      margin-bottom: 0.5rem;
+  }
+}
+
+table {
+  margin: 0px;
+  border: 1px solid black;
+}
+
+tr {
+  margin: 0px;
+  padding-left: 2px;
+  padding-right: 2px;
+  border: 1px solid black;
+}
+
+td {
+  padding-left: 2px;
+  padding-right: 2px;
+  margin: 0px;
+  border: 1px solid black;
+}
+
+.bracket-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  background-color: #fff;
+}
+
+/* One 'pair' = two Round 1 matches feeding into one Round 2 match */
+.pair {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.region {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.matches {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 250px;
+}
+
+.team {
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom: 1px solid black;
+}
+
+.visitor {
+  border-right: 1px solid black;
+}
+
+/* LEFT SIDE: Two stacked matches */
+.round-64 {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* RIGHT SIDE: Next-round match */
+.round-32 {
+  position: relative;
+  flex-direction: column;
+  .match {
+    padding-top: 11px;
+    padding-bottom: 10px;
+    .visitor {
+      padding-top: 21px;
+    }
+  }
+}
+
+.round-16 {
+  position: relative;
+  flex-direction: column;
+  align-items: space-between; 
+  top: 0px;
+  .match {
+    padding-top: 30px;
+    padding-bottom: 30px;
+    .visitor {
+      padding-top: 63px;
+    }
+  }
+}
+
+.round-8 {
+  position: relative;
+  flex-direction: column;
+  align-items: space-between; 
+  top: 0px;
+  .match {
+    padding-top: 80px;
+    padding-bottom: 80px;
+    .visitor {
+      padding-top: 150px;
+    }
+  }
+}
+
+.round-4 {
+  position: relative;
+  flex-direction: column;
+  align-items: space-between; 
+  top: 0px;
+  .match {
+    padding-top: 140px;
+    padding-bottom: 140px;
+    .visitor {
+      padding-top: 290px;
+    }
+  }
+}
+
+.round-2 {
+  position: relative;
+  flex-direction: column;
+  align-items: space-between; 
+  top: 0px;
+  .match {
+    padding-top: 240px;
+    padding-bottom: 240px;
+    .visitor {
+      padding-top: 520px;
+    }
+  }
 }

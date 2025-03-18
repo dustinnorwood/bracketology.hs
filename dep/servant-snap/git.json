@@ -1,9 +1,11 @@
 {
-  "url": "https://github.com/haskell-servant/servant-snap.git",
-  "rev": "b54c5da86f2f2ed994e9dfbb0694c72301b5a220",
-  "date": "2020-09-07T18:34:03-04:00",
-  "path": "/nix/store/84151b8dlh0n6hbkc5g7x5xf6h17l4hd-servant-snap",
-  "sha256": "0j0a3lznxnf8f98fibla7d0bksz3kk4z9q02afmls5f9yylpf2ad",
+  "url": "https://github.com/dustinnorwood/servant-snap.git",
+  "rev": "98d71842cfea423d8d9717dfb6d630ec071a28fb",
+  "date": "2025-03-15T23:29:15-04:00",
+  "path": "/nix/store/5yq8s3vi1k0195m9cwlkrpy9r3i2d0h2-servant-snap",
+  "sha256": "0mykynv2ds9qrb86qj08fxkq19b01zisiy77c6d46i8b002n6v2c",
+  "hash": "sha256-TGxjBQALRUOaYef4qOMPYKWAZ3cISGzQyjjpJrb101c=",
+  "fetchLFS": false,
   "fetchSubmodules": false,
   "deepClone": false,
   "leaveDotGit": false

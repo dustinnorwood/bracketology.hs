@@ -27,10 +27,10 @@ project ./. ({ pkgs, hackGet, ... }: {
     monad-alter = dontCheck ((import ./dep/monad-alter) self super);
     servant-reflex = dontCheck ((import ./dep/servant-reflex) self super);
     servant-snap = dontCheck ((import ./dep/servant-snap) self super);
-    scrypt = dontCheck super.scrypt;
+    beam-migrate = self.callHackage "beam-migrate" "0.5.2.0" {};
+    beam-postgres = dontCheck (self.callHackage "beam-postgres" "0.5.3.0" {});
   });
   packages = {
-    obelisk-oauth-backend = hackGet ./dep/obelisk-oauth + /backend;
-    obelisk-oauth-common = hackGet ./dep/obelisk-oauth + /common;
+
   };
 })

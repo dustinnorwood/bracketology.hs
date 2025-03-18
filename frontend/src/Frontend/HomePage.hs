@@ -11,8 +11,10 @@ module Frontend.HomePage where
 
 import Reflex.Dom.Core
 
+import           Common.Route
 import           Control.Monad.Fix      (MonadFix)
 import           Frontend.Matchup       (bracketPage)
+import           Obelisk.Route.Frontend
 
 homePage
   :: forall t m
@@ -21,6 +23,7 @@ homePage
      , MonadHold t m
      , MonadFix m
      , Prerender t m
+     , SetRoute t (R FrontendRoute) m
      )
   => m ()
 homePage = bracketPage

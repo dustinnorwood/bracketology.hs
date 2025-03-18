@@ -92,7 +92,9 @@ createTeamSimulationDetails teams teamObj =
       b = blocksByGame teamObj
       bd = toDouble <$> b
       pps = flip M.map (teamObj ^. players) $ \p@Player{..} ->
-        let fga = playerStat fieldGoalsAttemptedByPlayer _player_name teamObj
+        let fta = playerStat freeThrowsAttemptedByPlayer _player_name teamObj
+            ftm = playerStat freeThrowsMadeByPlayer _player_name teamObj
+            fga = playerStat fieldGoalsAttemptedByPlayer _player_name teamObj
             fgm = playerStat fieldGoalsMadeByPlayer _player_name teamObj
             tpa = playerStat threePointersAttemptedByPlayer _player_name teamObj 
             tpm = playerStat threePointersMadeByPlayer _player_name teamObj
@@ -101,8 +103,8 @@ createTeamSimulationDetails teams teamObj =
             mCount = O.size $ teamObj ^. matchups
          in PP
               { _pp_player = p
-              , _pp_freeThrowProbability  = (playerStat freeThrowsMadeByPlayer _player_name teamObj) / fromInteger fts
-              , _pp_freeThrowPercentage   = playerStat freeThrowsMadeByPlayer _player_name teamObj
+              , _pp_freeThrowProbability  = if fts == 0 then 0.0 else fta / fromIntegral fts
+              , _pp_freeThrowPercentage   = if fta == 0 then 0.0 else ftm / fta
               , _pp_fieldGoalProbability  = if tpa + fga == 0 then 0.0 else fga / (tpa + fga)
               , _pp_fieldGoalPercentage   = if fga + fgm == 0.0 then 0.0 else fgm / fga
               , _pp_threePointProbability = if tpa + fga == 0 then 0.0 else tpa / (tpa + fga)

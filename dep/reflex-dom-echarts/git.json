@@ -4,6 +4,8 @@
   "date": "2022-03-12T12:14:07-05:00",
   "path": "/nix/store/h3i2f97l86ymxavzy9q2wjqjk50ck654-reflex-dom-echarts",
   "sha256": "0nlsnxq0z7yaj7jfi1vsgh8vfg74rcp4sds6lxin2z4dpxrzv281",
+  "hash": "sha256-AYn9c7+NfGFjp0Y3TS7L5Dy3EXx6h+jkkcqfD3C3mlo=",
+  "fetchLFS": false,
   "fetchSubmodules": false,
   "deepClone": false,
   "leaveDotGit": false

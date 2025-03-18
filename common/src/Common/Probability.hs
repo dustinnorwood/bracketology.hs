@@ -38,7 +38,7 @@ toCdf [] = []
 toCdf xs =
   let (y:ys) = toPmf xs
    in f y ys
-  where f _ [] = []
+  where f _ [] = [1.0]
         f z [y] = [y + z]
         f z (y:ys) = let yz = y + z in yz : f yz ys
 

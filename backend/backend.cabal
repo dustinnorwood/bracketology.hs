@@ -25,14 +25,11 @@ library
                , monad-control
                , mtl
                , obelisk-backend
-               , obelisk-oauth-backend
-               , obelisk-oauth-common
                , obelisk-route
                , postgresql-simple
                , req
                , resource-pool
                , safe-exceptions
-               , scrypt
                , servant-auth
 --               , servant-auth-server
                , servant-snap

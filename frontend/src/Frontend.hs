@@ -14,8 +14,9 @@ import Common.Route
 
 import           Common.Route                    (FrontendRoute (..))
 import           Frontend.Head                   (htmlHead)
-import           Frontend.HomePage               (homePage)
+-- import           Frontend.HomePage               (homePage)
 --import           Frontend.Login                  (login)
+import           Frontend.Matchup                (bracketPage, matchupPage)
 import           Frontend.Nav                    (nav)
 import           Frontend.Player                 (playerPage)
 import           Frontend.Team                   (teamPage)
@@ -40,12 +41,13 @@ htmlBody = do
       :: FrontendRoute a
       -> RoutedT t a m ()
     pages r = case r of
-      FrontendRoute_Home     -> homePage
+      FrontendRoute_Home     -> bracketPage
       FrontendRoute_Search   -> searchPage
       --FrontendRoute_Login    -> login
       --FrontendRoute_Register -> register
-      FrontendRoute_Team  -> teamPage
-      FrontendRoute_Player  -> playerPage
+      FrontendRoute_Team -> teamPage
+      FrontendRoute_Player -> playerPage
+      FrontendRoute_Matchup -> matchupPage
       --FrontendRoute_Settings -> settings
       --FrontendRoute_Profile  -> pathSegmentSubRoute profile
 

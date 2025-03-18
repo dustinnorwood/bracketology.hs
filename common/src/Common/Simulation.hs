@@ -23,6 +23,7 @@ import           Data.List                   (sortBy)
 import qualified Data.List.NonEmpty          as NE
 import qualified Data.Map.Strict             as M
 import           Data.Maybe                  (fromMaybe)
+import           Data.Ord                    (Down(..))
 import           Data.Text                   (Text)
 import qualified Data.Text                   as T
 import           System.Random
@@ -101,9 +102,9 @@ resetShotClock = sd_shotClock .= constants_shotClock
 
 setStarters :: HasRandom m => TeamSimulation -> m TeamSimulation
 setStarters ts = do
-  let lineup = sortBy (compare `on` (negate . _pp_onCourtProbability)) . M.elems $ ts ^. ts_team . tsd_playerProbabilities
+  let lineup = sortBy (compare `on` (Down . _pp_startProbability)) . M.elems $ ts ^. ts_team . tsd_playerProbabilities
       isOnCourt p = (,p) <$> bernoulli (_pp_onCourtProbability p)
-  starters <- take 5 . map snd . filter fst <$> traverse isOnCourt lineup
+      starters = take 5 lineup -- . map snd . filter fst <$> traverse isOnCourt lineup
   pure $ (ts_playersOnCourt .~ starters) ts
 
 setPlayerWithBall :: HasRandom m => TeamSimulation -> m TeamSimulation
@@ -122,11 +123,13 @@ playGame :: Puttable LogMessage m
          => TeamSimulationDetails
          -> TeamSimulationDetails
          -> Int
-         -> m SimulationData
-playGame tsd1 tsd2 seed = flip execStateT (startingSimulationData tsd1 tsd2 seed) $ do
+         -> m (SimulationData, SimulationData)
+playGame tsd1 tsd2 seed = flip runStateT (startingSimulationData tsd1 tsd2 seed) $ do
   let t1name = tsd1 ^. tsd_teamObj . team . team_name
   let t2name = tsd2 ^. tsd_teamObj . team . team_name
   FT.put . LogMessage $ "Starting game between " <> t1name <> " and " <> t2name
+  -- FT.put . LogMessage . T.pack $ show tsd1
+  -- FT.put . LogMessage . T.pack $ show tsd2
   t1 <- use sd_team1
   t1' <- setStarters t1
   sd_team1 .= t1'
@@ -137,9 +140,11 @@ playGame tsd1 tsd2 seed = flip execStateT (startingSimulationData tsd1 tsd2 seed
                   <> T.pack (show $ (^. pp_player . player_name) <$> t1' ^. ts_playersOnCourt)
   FT.put . LogMessage $ "Starters for " <> t2name <> ":\n"
                   <> T.pack (show $ (^. pp_player . player_name) <$> t2' ^. ts_playersOnCourt)
+  sd <- get
   playPeriod 1
   playPeriod 2
   playOvertime
+  pure sd
 
 
 playPeriod :: Puttable LogMessage m => Int -> StateT SimulationData m ()
@@ -151,7 +156,7 @@ playPeriod n = do
   FT.put . LogMessage $ "Playing period " <> T.pack (show n)
   possession <- randomBool
   sd_possession .= possession
-  FT.put . LogMessage $ (if possession then t1name else t2name) <> " won tip-off"
+  FT.put . LogMessage $ (if possession then t2name else t1name) <> " won tip-off"
   sd_period .= n
   let seconds = fromInteger $ 60 * (if n < 3 then 20 else 5)
   sd_secondsLeftInPeriod .= seconds
@@ -162,7 +167,7 @@ playOvertime :: Puttable LogMessage m => StateT SimulationData m ()
 playOvertime = do
   t1Score <- use $ sd_team1 . ts_team_score
   t2Score <- use $ sd_team2 . ts_team_score
-  when (t1Score == t2Score) $ do
+  when (t1Score == t2Score && t1Score /= 0) $ do
     n <- use sd_period
     playPeriod $ n + 1
     playOvertime
@@ -407,7 +412,7 @@ isPass ts = case ts ^. ts_playerWithBall of
 isTurnover :: HasRandom m => TeamSimulation -> m Bool
 isTurnover ts = case ts ^. ts_playerWithBall of
   Nothing -> pure False
-  Just p -> bernoulli $ p ^. pp_turnoverPercentage * ts ^. ts_team_ratio
+  Just p -> bernoulli $ p ^. pp_turnoverPercentage / ts ^. ts_team_ratio
 
 isBlock :: HasRandom m => TeamSimulation -> m Bool
 isBlock ts = bernoulli $ ts ^. ts_team . tsd_blockPercentage * ts ^. ts_team_ratio
@@ -474,14 +479,18 @@ simulateGame :: Puttable LogMessage m
              -> TeamSimulationDetails
              -> Int
              -> m (Sim Double)
-simulateGame tsd1 tsd2 seed = flip evalStateT (mkStdGen seed) $ do
-  let tss1 = getTeamSimDetails tsd1
-      tss2 = getTeamSimDetails tsd2
-  tss1' <- traverse (traversePS normalOutcome) tss1
-  tss2' <- traverse (traversePS normalOutcome) tss2
-  let p1 = sum $ points <$> tss1'
-  let p2 = sum $ points <$> tss2'
-  pure $ Sim p1 p2
+simulateGame tsd1 tsd2 seed = simDataToSim . snd <$> playGame tsd1 tsd2 seed
+
+simDataToSim :: SimulationData -> Sim Double
+simDataToSim sd = Sim (fromIntegral $ sd ^. sd_team1 . ts_team_score) (fromIntegral $ sd ^. sd_team2 . ts_team_score)
+  -- flip evalStateT (mkStdGen seed) $ do
+  -- let tss1 = getTeamSimDetails tsd1
+  --     tss2 = getTeamSimDetails tsd2
+  -- tss1' <- traverse (traversePS normalOutcome) tss1
+  -- tss2' <- traverse (traversePS normalOutcome) tss2
+  -- let p1 = sum $ points <$> tss1'
+  -- let p2 = sum $ points <$> tss2'
+  -- pure $ Sim p1 p2
 
 points :: Num a => PlayerSim a -> a
 points (PS _ fg ft tp) = 2*fg + ft + 3*tp

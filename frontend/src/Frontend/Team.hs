@@ -171,7 +171,7 @@ playerTable
   -> m ()
 playerTable teamObj = do
   let playersDyn = constDyn $ teamObj ^. players
-      pPerfs p = M.elems $ M.filterWithKey (\(n,_) _ -> p == n) (teamObj ^. performances)
+      pPerfs p = M.elems $ M.filterWithKey (\(_,n) _ -> p == n) (teamObj ^. performances)
       ppg = average . map (fromInteger . (^. performance_points))
       gp = length
       teamName = teamObj ^. team . team_name
@@ -180,7 +180,7 @@ playerTable teamObj = do
         , ("Number", \_ m -> dynText $ T.pack . show . _player_number <$> m)
         , ("Position",  \_ m -> dynText $ _player_position <$> m)
         , ("Games Played", \k _ -> dynText . constDyn $ T.pack . show . gp $ pPerfs k)
-        , ("Points per game", \k _ -> dynText . constDyn $ T.pack . show . ppg $ pPerfs k)
+        , ("Points per game", \k _ -> dynText . constDyn $ T.pack . show . (/10) . fromIntegral . round . (*10) . ppg $ pPerfs k)
         ]
       attrFunc _ = pure $ constDyn M.empty
   tableDynAttr "" tableFuncs playersDyn attrFunc

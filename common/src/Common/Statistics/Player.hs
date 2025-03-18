@@ -6,6 +6,7 @@ import           Control.Lens
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.State
 import           Data.Bool                   (bool)
+import           Data.Char                   (ord)
 import qualified Data.List.NonEmpty          as NE
 import qualified Data.Map.Ordered            as O
 import           Data.Map.Strict             (Map)
@@ -27,7 +28,7 @@ playerPerformances :: TeamObject -> Map Text [Performance]
 playerPerformances tObj = getPerformances tObj <$> tObj ^. players
   where getPerformances teamObj p = M.elems
                                   $ M.filterWithKey
-                                  (\(pName,_) v -> pName == p ^. player_name)
+                                  (\(_,pName) v -> pName == p ^. player_name)
                                   (teamObj ^. performances)
 
 fieldGoalsAttemptedForPlayer :: [Performance] -> Integer
@@ -157,8 +158,17 @@ foulsForPlayer = sum . fmap _performance_personalFouls
 foulsByPlayer :: TeamObject -> Map Text Integer
 foulsByPlayer = fmap foulsForPlayer . playerPerformances
 
+readMinutes :: String -> Maybe Double
+readMinutes (a:b:':':c:d:_) = Just $
+  let ord0 = ord '0'
+   in 10.0*(fromIntegral $ ord a - ord0)
+      + (fromIntegral $ ord b - ord0)
+      + 0.1*(fromIntegral $ ord c - ord0)
+      + 0.01*(fromIntegral $ ord d - ord0)
+readMinutes _ = Nothing
+
 minutesForPlayer :: [Performance] -> Double
-minutesForPlayer = sum . fmap (fromMaybe 0.0 . readMaybe . T.unpack . _performance_minutes)
+minutesForPlayer = sum . fmap (fromMaybe 0.0 . readMinutes . T.unpack . _performance_minutes)
 
 minutesByPlayer :: TeamObject -> Map Text Double
 minutesByPlayer = fmap minutesForPlayer . playerPerformances

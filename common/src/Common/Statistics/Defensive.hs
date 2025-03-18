@@ -40,7 +40,7 @@ opponentMatchupPerformances :: Map Text TeamObject -> TeamObject -> [[Performanc
 opponentMatchupPerformances tms tObj = getPerformances tms tObj . snd <$> O.assocs (tObj ^. matchups)
   where getPerformances teams teamObj m = M.elems
           $ M.filterWithKey
-          (\(_,mId) v -> mId == getOppMatchupId
+          (\(mId,_) v -> mId == getOppMatchupId
                                   (teamObj ^. team . team_name)
                                   m)
           (maybe M.empty (^. performances) $ opponent teams m)

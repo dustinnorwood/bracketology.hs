@@ -25,7 +25,7 @@ matchupPerformances :: TeamObject -> [[Performance]]
 matchupPerformances tObj = getPerformances tObj . snd <$> O.assocs (tObj ^. matchups)
   where getPerformances teamObj m = M.elems
                                   $ M.filterWithKey
-                                  (\(_,mId) v -> mId == m ^. matchup_id)
+                                  (\(mId,_) v -> mId == m ^. matchup_id)
                                   (teamObj ^. performances)
 
 fieldGoalsAttemptedInGame :: [Performance] -> Integer
@@ -182,23 +182,25 @@ teamThreePointPercentage teamObj =
 -- offensivePpgRatioInGame :: Map Text Team -> Matchup [Performance]) -> Double[]
 -- offensivePpgRatioInGame
 
-homeAdvantage :: ToDouble a => (TeamObject -> [a]) -> TeamObject -> Double
+homeAdvantage :: ToDouble a => (TeamObject -> [a]) -> TeamObject -> (Double, Double)
 homeAdvantage stat teamObj =
   let teamStat = stat teamObj
       games = snd <$> O.assocs (teamObj ^. matchups)
       aways = filter (not . _matchup_home . fst) $ zip games teamStat
       homes = filter (_matchup_home . fst) $ zip games teamStat
       num = average $ toDouble . snd <$> homes
-      den = average $ toDouble . snd <$> aways
-   in if den == 0.0 then 0.0 else num / den
+      num2 = average $ toDouble . snd <$> aways
+      den = average $ toDouble <$> teamStat
+   in if den == 0.0 then (0.0, 0.0) else (num / den, num2 / den)
 
 
 removeHomeAdvantage :: ToDouble a => (TeamObject -> [a]) -> TeamObject -> [Double]
 removeHomeAdvantage stat teamObj =
   let games = snd <$> O.assocs (teamObj ^. matchups)
-      adv = homeAdvantage stat teamObj
+      (homeAdv, awayDisadv) = homeAdvantage stat teamObj
       homes = map (bool 0.0 1.0 . _matchup_home) games
       aways = map (bool 1.0 0.0 . _matchup_home) games
-      divd = homes `divideDouble` adv
-      addd = divd `addDoubles` aways
+      divh = homes `divideDouble` homeAdv
+      diva = aways `divideDouble` awayDisadv
+      addd = divh `addDoubles` diva
    in (toDouble <$> stat teamObj) `multiplyDoubles` addd

@@ -16,6 +16,7 @@ import Common.Api.Matchups.Matchup
 import Common.Api.Performances.Performance
 import Common.Api.Players.Player
 import Common.Api.Teams.Team
+import Common.Api.Teams.TeamObject
 import Control.Concurrent
 import Control.Lens
 import Control.Monad.Error.Class       (MonadError)
@@ -26,9 +27,11 @@ import Control.Monad.State
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Control     (MonadBaseControl)
 import Control.Monad.Trans.Maybe
+import qualified Data.Aeson as Aeson
 import Data.Bifunctor (first)
 import qualified Data.ByteString.Lazy as LBS
 import Data.Foldable (traverse_, for_)
+import qualified Data.Map.Ordered                 as O
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe)
@@ -39,6 +42,7 @@ import Data.Traversable (for)
 import Database.PostgreSQL.Simple      (Connection)
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
+import qualified System.IO as SIO
 import Text.HTML.Parser
 import Text.Parsec
 import Text.Read (readMaybe)
@@ -74,8 +78,13 @@ tagOpen tag = get >>= \case
 contentText :: Monad m => Html m (Maybe Text)
 contentText = get >>= \case
   [] -> pure Nothing
-  (ContentText t):ts -> put ts >> pure (Just t)
+  (ContentText t):ts -> put ts >> (Just . (t <>) <$> getRestOfContentText)
+  (ContentChar c):ts -> put ts >> (Just . (T.pack [c] <>) <$> getRestOfContentText)
   (_:ts) -> put ts >> contentText
+  where getRestOfContentText = get >>= \case
+          (ContentText t):ts -> put ts >> ((t <>) <$> getRestOfContentText)
+          (ContentChar c):ts -> put ts >> ((T.pack [c] <>) <$> getRestOfContentText)
+          _ -> pure ""
 
 tagContentText :: Monad m => Text -> Html m (Maybe Text)
 tagContentText tag = tagOpen tag >> contentText
@@ -308,9 +317,9 @@ getPlayer teamName = do
         inches <- tReadMaybe =<< mInches
         pure $ 12 * ft + inches
   mHeightT <- tagContentText "td"
-  let mHeight = getHeight =<< mHeightT
+  let mHeight = Just . fromMaybe 72 . getHeight =<< mHeightT
   mWeightT <- tagContentText "td"
-  let mWeight = tReadMaybe =<< mWeightT
+  let mWeight = Just . fromMaybe 200 . tReadMaybe =<< mWeightT
   mBirthDate <- tagContentText "td"
   mBirthCity <- tagContentText "td"
   mNationality <- tagContentText "td"
@@ -347,27 +356,35 @@ getTeam = do
   pure $ Team <$> mTeamUrl <*> mTeamName <*> pure "" <*> pure 0.0
 
 downloadNewData
-  :: ( MonadReader Connection m
-     , MonadError QueryError m
-     , MonadIO m
+  :: ( -- MonadReader Connection m
+     -- , MonadError QueryError m
+       MonadIO m
+     -- , MonadIO m
      , MonadBaseControl IO m
      , MonadFail m
      )
-  => m ()
+  => m (Map Text TeamObject)
 downloadNewData = do
   manager <- liftIO $ newManager tlsManagerSettings
   teams' <- downloadTeams manager
-  let teams = dropWhile ((/= "Northwestern State") . _team_name) teams'
-  traverse_ Teams.create teams
-  for_ teams $ \team -> do
+  -- let teams = dropWhile ((/= "Florida") . _team_name) teams'
+  -- traverse_ Teams.create teams
+  fmap M.fromList . for teams' $ \team -> do
     liftIO . putStrLn $ "Downloading team " ++ T.unpack (team ^. team_name) 
     players <- downloadPlayers manager team
     liftIO $ threadDelay 1000000
     liftIO . putStrLn $ "Finished downloading players for " ++ T.unpack (team ^. team_name) 
     ~(teamImage, matchups) <- downloadMatchupsAndPerformances manager team
     liftIO . putStrLn $ "Finished downloading matchups and performances for " ++ T.unpack (team ^. team_name) 
-    Teams.updateImage (team ^. team_name) teamImage
-    traverse_ Players.create players
-    for matchups $ \(matchup, performances) -> do
-      void $ Matchups.create matchup
-      traverse_ Performances.create performances
+    -- Teams.updateImage (team ^. team_name) teamImage
+    -- traverse_ Players.create players
+    -- for_ matchups $ \(matchup, performances) -> do
+    --   void $ Matchups.create matchup
+    --   traverse_ Performances.create performances
+    let matchupMap = O.fromList $ (\m -> (m ^. matchup_id, m)) . fst <$> matchups
+        playerMap = M.fromList $ (\p -> (p ^. player_name, p)) <$> players
+        perfMap = M.fromList $ (\p -> ((p ^. performance_matchupId, p ^. performance_player), p)) <$> concat (snd <$> matchups)
+        teamObj = TeamObject (team & team_image .~ teamImage) matchupMap playerMap perfMap
+    liftIO $ LBS.appendFile "/Users/dustinnorwood/Teams.txt" $ Aeson.encode teamObj
+    liftIO $ SIO.appendFile "/Users/dustinnorwood/Teams.txt" "\n"
+    pure (team ^. team_name, teamObj)

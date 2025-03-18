@@ -1,9 +1,11 @@
 {
   "url": "https://github.com/imalsogreg/servant-reflex.git",
-  "rev": "20e2621cc2eca5fe38f8a01c7a159b0b9be524ea",
-  "date": "2021-03-22T22:10:04-04:00",
-  "path": "/nix/store/nbqwsczllrsx0h74ifib37xah3y5gbhk-servant-reflex",
-  "sha256": "0aqyk04yg39xj40aj86hr6gwbzvj6i2fxi8zznmfl5fay8l96b4g",
+  "rev": "a6f859e52857e0eda753cf113fabfff61f06da6a",
+  "date": "2022-01-19T21:38:53-05:00",
+  "path": "/nix/store/kh728dcj0wkblrnf2fh03mzjjvzq1qdx-servant-reflex",
+  "sha256": "0j36sl7l553iy1vpwy6263xdpj3m2n2rkkkdcsxpkr48p328lac4",
+  "hash": "sha256-hCmKxLiI5Hm7Zm3OmYUVdcjb+jDCeH538HGUQg/VZkg=",
+  "fetchLFS": false,
   "fetchSubmodules": false,
   "deepClone": false,
   "leaveDotGit": false

@@ -9,8 +9,6 @@ import           Control.Monad.Fail              (MonadFail)
 import           Control.Monad.IO.Class          (MonadIO, liftIO)
 import           Control.Monad.Reader.Class      (MonadReader, ask)
 import           Control.Monad.Trans.Control     (MonadBaseControl)
-import           Crypto.Scrypt                   (EncryptedPass (EncryptedPass, getEncryptedPass),
-                                                  Pass (Pass), encryptPassIO', verifyPass')
 import           Data.Functor                    (void)
 import           Data.Functor.Compose            (Compose (Compose, getCompose))
 import           Data.Int                        (Int32)

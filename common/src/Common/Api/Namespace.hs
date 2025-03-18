@@ -9,6 +9,7 @@ module Common.Api.Namespace
 
 import           Data.Aeson                 (FromJSON (..), ToJSON (..), object,
                                              withObject, (.:), (.=))
+import           Data.Aeson.Key             (fromText)
 import           Data.Proxy                 (Proxy (Proxy))
 import           Data.Text                  (Text)
 import qualified Data.Text                  as Text
@@ -25,9 +26,9 @@ symbolToText :: KnownSymbol a => Proxy a -> Text
 symbolToText = Text.pack . symbolVal
 
 instance (KnownSymbol ns, ToJSON a) => ToJSON (Namespace ns a) where
-  toJSON (Namespace a) = object [symbolToText (Proxy :: Proxy ns) .= a]
+  toJSON (Namespace a) = object [fromText (symbolToText (Proxy :: Proxy ns)) .= a]
 
 instance (KnownSymbol ns, FromJSON a) => FromJSON (Namespace ns a) where
   parseJSON =
     withObject "Namespace" $ \v ->
-      Namespace <$> v .: symbolToText (Proxy :: Proxy ns)
+      Namespace <$> v .: fromText (symbolToText (Proxy :: Proxy ns))

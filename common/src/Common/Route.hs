@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE EmptyCase #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -11,6 +12,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Common.Route where
 
 import           Prelude hiding (id, (.))
@@ -135,6 +137,7 @@ data FrontendRoute :: * -> * where
   FrontendRoute_Settings :: FrontendRoute ()
   FrontendRoute_Team :: FrontendRoute TeamName
   FrontendRoute_Player :: FrontendRoute (TeamName, PlayerName)
+  FrontendRoute_Matchup :: FrontendRoute (TeamName, TeamName)
   -- This type is used to define frontend routes, i.e. ones for which the backend will serve the frontend.
 
 data ProfileRoute :: * -> * where
@@ -163,6 +166,7 @@ fullRouteEncoder = mkFullRouteEncoder
       FrontendRoute_Settings -> PathSegment "settings" $ unitEncoder mempty
       FrontendRoute_Team -> PathSegment "team" $ singlePathSegmentEncoder . unwrappedEncoder
       FrontendRoute_Player -> PathSegment "player" $ pathParamEncoder unwrappedEncoder $ singlePathSegmentEncoder . unwrappedEncoder
+      FrontendRoute_Matchup -> PathSegment "matchup" $ pathParamEncoder unwrappedEncoder $ singlePathSegmentEncoder . unwrappedEncoder
   )
 
 apiRouteEncoder :: Encoder (Either Text) (Either Text) (R ApiRoute) PageName

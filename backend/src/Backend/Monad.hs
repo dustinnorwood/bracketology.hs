@@ -106,7 +106,7 @@ instance Selectable (Player, [Performance]) (TeamName, PlayerName) AppMemServerM
     let mTeam = M.lookup teamName teamList
         mPlayerPerfs = join $ mTeam <&> \TeamObject{..} ->
           let mPlayer = M.lookup playerName _players
-              perfs = M.elems $ M.filterWithKey (\(p,_) _ -> p == playerName) _performances
+              perfs = M.elems $ M.filterWithKey (\(_,p) _ -> p == playerName) _performances
            in flip (,) perfs <$> mPlayer
     pure mPlayerPerfs
 

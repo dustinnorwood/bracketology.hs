@@ -24,6 +24,7 @@ import           Control.Monad.Reader             (asks, ReaderT, runReaderT)
 import           Control.Monad.State
 import           Data.Functor                     (($>))
 import           Data.IORef
+import           Data.List                        (foldl')
 import qualified Data.Map.Ordered                 as O
 import           Data.Map.Strict                  (Map)
 import qualified Data.Map.Strict                  as M
@@ -75,16 +76,20 @@ adjustTeamScores teams =
 adjustTeamScore :: Map Text TeamObject -> Double -> Double -> TeamObject -> TeamObject
 adjustTeamScore m maxScore minScore teamObj =
   let matchups' = O.assocs $ teamObj ^. matchups
-      newScore = fst $ foldr rawScore (0.0, 1.0) $ snd <$> matchups'
+      newScore = foldl' rawScore 0.0 $ snd <$> matchups'
    in (team . team_score .~ newScore) teamObj
-  where rawScore Matchup{..} (s, fade) = case M.lookup _matchup_opponent m of
-          Nothing -> (s, fade * 0.95)
+  where rawScore s Matchup{..} = let fade = 0.97 in case M.lookup _matchup_opponent m of
+          Nothing -> s * fade
           Just opp ->
             let oppScore = opp ^. team . team_score
                 scoreDiff = (oppScore - minScore) / (maxScore - minScore)
-                toleranceAdjustment = if _matchup_win then 0 else -1.0
-                newS = s + fade * (scoreDiff + toleranceAdjustment)
-             in (newS, fade * 0.95)
+                margin = abs $ _matchup_teamScore - _matchup_oppScore
+                toleranceAdjustment = if _matchup_win then 0.0 else -1.0
+                adj = if scoreDiff + toleranceAdjustment > 0
+                        then (scoreDiff + toleranceAdjustment) ** 1.0
+                        else - ((-(scoreDiff + toleranceAdjustment)) ** 1.0)
+                newS = s + (fromIntegral margin ** 0.00) * adj
+             in newS * fade
 
 whitenTeamScores :: Map Text TeamObject -> Map Text TeamObject  
 whitenTeamScores teams =
