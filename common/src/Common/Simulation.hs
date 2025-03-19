@@ -353,7 +353,7 @@ foulRoutine :: Puttable LogMessage m => Bool -> StateT SimulationData m Bool
 foulRoutine isShootingFoul = do
   twob <- teamWithoutBall
   if isShootingFoul
-    then bernoulli $ twob ^. ts_team . tsd_foulPercentage * twob ^. ts_team . tsd_teamObj . team . team_score
+    then bernoulli $ twob ^. ts_team . tsd_foulPercentage
     else do
       twb <- teamWithBall
       foulUrgency <-
@@ -365,7 +365,7 @@ foulRoutine isShootingFoul = do
             pure $ if period >= 2 && seconds < 120
               then (((toDouble $ twb ^. ts_team_score - twob ^. ts_team_score)*(150.0 - seconds)))/120.0
               else 1.0
-      bernoulli $ twob ^. ts_team . tsd_foulPercentage * twob ^. ts_team . tsd_teamObj . team . team_score * foulUrgency
+      bernoulli $ twob ^. ts_team . tsd_foulPercentage * foulUrgency
 
 
 reboundRoutine :: Puttable LogMessage m => StateT SimulationData m Bool
@@ -373,11 +373,9 @@ reboundRoutine = do
   twb <- (^. ts_team) <$> teamWithBall
   twob <- (^. ts_team) <$> teamWithoutBall
   let orp = twb ^. tsd_offensiveReboundPercentage * twb ^. tsd_teamObj . team . team_score
-      twbScore = twb ^. tsd_teamObj . team . team_score
       drp = twob ^. tsd_defensiveReboundPercentage * twob ^. tsd_teamObj . team . team_score
-      twobScore = twob ^. tsd_teamObj . team . team_score
   n <- randomDouble
-  pure $ getCdfBin [orp * twbScore, drp * twobScore] n == 0
+  pure $ getCdfBin [orp, drp] n == 0
 
 bernoulli :: HasRandom m => Double -> m Bool
 bernoulli p = do
@@ -397,7 +395,7 @@ isThreePointShotMade ts = case ts ^. ts_playerWithBall of
 isFreeThrowMade :: HasRandom m => TeamSimulation -> m Bool
 isFreeThrowMade ts = case ts ^. ts_playerWithBall of
   Nothing -> pure False
-  Just p -> bernoulli $ (p ^. pp_freeThrowPercentage) * (ts ^. ts_team . tsd_teamObj . team . team_score)
+  Just p -> bernoulli $ (p ^. pp_freeThrowPercentage) * ts ^. ts_team_ratio
 
 isShootingThree :: HasRandom m => TeamSimulation -> m Bool
 isShootingThree ts = case ts ^. ts_playerWithBall of

@@ -75,6 +75,14 @@ tagOpen tag = get >>= \case
   (TagOpen t _):ts | t == tag -> put ts
   (_:ts) -> put ts >> tagOpen tag
 
+tagOpenLenient :: Monad m => Text -> Html m ()
+tagOpenLenient tag = get >>= \case
+  [] -> pure ()
+  (TagOpen t _):ts | t == tag -> put ts
+  (ContentText t):ts -> pure ()
+  (ContentChar c):ts -> pure ()
+  (_:ts) -> put ts >> tagOpenLenient tag
+
 contentText :: Monad m => Html m (Maybe Text)
 contentText = get >>= \case
   [] -> pure Nothing
@@ -88,6 +96,9 @@ contentText = get >>= \case
 
 tagContentText :: Monad m => Text -> Html m (Maybe Text)
 tagContentText tag = tagOpen tag >> contentText
+
+tagContentTextLenient :: Monad m => Text -> Html m (Maybe Text)
+tagContentTextLenient tag = tagOpenLenient tag >> contentText
 
 matchContentText :: Monad m => Text -> Html m ()
 matchContentText t' = get >>= \case
@@ -247,7 +258,7 @@ getMatchup teamName = do
   mHomeVal <- tagContentText "div"
   let mHome = (/="@") <$> mHomeVal
   a
-  mOpponent <- tagContentText "a"
+  mOpponent <- tagContentTextLenient "a"
   tagOpenWithAttrValue "td" "data-th" "Result"
   mMatchupUrl <- aHref
   mResultT <- contentText
@@ -258,8 +269,8 @@ getMatchup teamName = do
       mWin = (\(w,_,_) -> w) <$> mResult
       snd3 (_,b,_) = b
       thd3 (_,_,c) = c
-      mTeamScore = (if fromMaybe False mHome then thd3 else snd3) <$> mResult
-      mOppScore = (if fromMaybe False mHome then snd3 else thd3) <$> mResult
+      mTeamScore = (if fromMaybe False mHome then snd3 else thd3) <$> mResult
+      mOppScore = (if fromMaybe False mHome then thd3 else snd3) <$> mResult
       mId = fmap T.concat $ sequence [
           mOpponent
         , T.pack . show <$> mTeamScore
@@ -281,10 +292,10 @@ parseMatchupResult :: Parsec Text () (Bool, Integer, Integer)
 parseMatchupResult = do
   win <- choice [True <$ char 'W', False <$ char 'L']
   string ", "
-  awayScore <- fromMaybe 0 . readMaybe <$> many digit
-  string " - "
   homeScore <- fromMaybe 0 . readMaybe <$> many digit
-  pure (win, awayScore, homeScore)
+  string " - "
+  awayScore <- fromMaybe 0 . readMaybe <$> many digit
+  pure (win, homeScore, awayScore)
 
 downloadPlayers :: MonadIO m => Manager -> Team -> m [Player]
 downloadPlayers manager t = do
